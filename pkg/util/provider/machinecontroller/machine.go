@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gardener/machine-controller-manager/pkg/util/annotations"
 	"github.com/gardener/machine-controller-manager/pkg/util/nodeops"
 	"github.com/gardener/machine-controller-manager/pkg/util/provider/metrics"
 	corev1 "k8s.io/api/core/v1"
@@ -656,6 +657,9 @@ func (c *controller) triggerDeletionFlow(ctx context.Context, deleteMachineReque
 		err := fmt.Errorf("Machine %q is missing finalizers. Deletion cannot proceed", machine.Name)
 		return machineutils.LongRetry, err
 
+	case machine.Status.CurrentStatus.Phase == v1alpha1.MachineWaitingForTerminationHook:
+		return c.waitForTerminationHook(ctx, deleteMachineRequest)
+
 	case machine.Status.CurrentStatus.Phase != v1alpha1.MachineTerminating:
 		return c.setMachineTerminationStatus(ctx, deleteMachineRequest)
 
@@ -673,6 +677,9 @@ func (c *controller) triggerDeletionFlow(ctx context.Context, deleteMachineReque
 
 	case strings.Contains(machine.Status.LastOperation.Description, machineutils.DelVolumesAttachments):
 		return c.deleteNodeVolAttachments(ctx, deleteMachineRequest)
+
+	case strings.Contains(machine.Status.LastOperation.Description, machineutils.InitiateVMDeletion) && annotations.HasTerminationHooks(machine):
+		return c.waitForTerminationHook(ctx, deleteMachineRequest)
 
 	case strings.Contains(machine.Status.LastOperation.Description, machineutils.InitiateVMDeletion):
 		return c.deleteVM(ctx, deleteMachineRequest)

@@ -11,6 +11,9 @@ const (
 	// the effective creation timeout for all Machine's belonging to this MachineDeployment. If specified, the value for this
 	// annotation takes precedence over the MachineDeployment.Spec.Template.Spec.MachineCreationTimeout.
 	AnnotationKeyMachineEffectiveCreationTimeout = "node.machine.sapcloud.io/effective-creation-timeout"
+	// AnnotationWaitingForTerminationHooks is the annotation key set on the Machine object that indicates that
+	// the termination of the VM shall be paused after drain
+	AnnotationWaitingForTerminationHooks = "node.machine.sapcloud.io/waiting-for-termination-hooks"
 	// AnnotationKeyMachineJoinDuration is the annotation key set on the Machine that indicates the amount of time Machine
 	// took to join the cluster and is useful for diagnosis. The value is a Go Duration string.
 	AnnotationKeyMachineJoinDuration = "node.machine.sapcloud.io/machine-join-duration"

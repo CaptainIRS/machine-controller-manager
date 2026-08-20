@@ -1844,6 +1844,50 @@ func (c *controller) deleteNodeVolAttachments(ctx context.Context, deleteMachine
 	return retryPeriod, err
 }
 
+func (c *controller) waitForTerminationHook(ctx context.Context, deleteMachineRequest *driver.DeleteMachineRequest) (machineutils.RetryPeriod, error) {
+	var (
+		machine     = deleteMachineRequest.Machine
+		now         = metav1.Now()
+		description string
+		phase       v1alpha1.MachinePhase
+	)
+
+	if annotationsutils.HasTerminationHooks(machine) {
+		description = fmt.Sprintf("%s. Waiting for termination hook to be removed.", machineutils.InitiateVMDeletion)
+		phase = v1alpha1.MachineWaitingForTerminationHook
+	} else {
+		description = fmt.Sprintf("Termination hook removed. %s", machineutils.InitiateVMDeletion)
+		phase = v1alpha1.MachineTerminating
+	}
+
+	currentStatus := machine.Status.CurrentStatus
+	if machine.Status.CurrentStatus.Phase != phase {
+		currentStatus = v1alpha1.CurrentStatus{
+			Phase:          phase,
+			TimeoutActive:  false,
+			LastUpdateTime: now,
+		}
+	}
+
+	updateRetryPeriod, updateErr := c.machineStatusUpdate(
+		ctx,
+		machine,
+		v1alpha1.LastOperation{
+			Description:    description,
+			State:          v1alpha1.MachineStateProcessing,
+			Type:           machine.Status.LastOperation.Type,
+			LastUpdateTime: now,
+		},
+		currentStatus,
+		machine.Status.LastKnownState,
+	)
+	if updateErr != nil {
+		return updateRetryPeriod, updateErr
+	}
+
+	return machineutils.ShortRetry, nil
+}
+
 // deleteVM attempts to delete the VM backed by the machine object
 func (c *controller) deleteVM(ctx context.Context, deleteMachineRequest *driver.DeleteMachineRequest) (machineutils.RetryPeriod, error) {
 	var (

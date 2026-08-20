@@ -109,3 +109,12 @@ func GetEffectiveMachineCreationTimeout(object runtime.Object) (*metav1.Duration
 	}
 	return &metav1.Duration{Duration: effectiveMachineCreationTimeout}, nil
 }
+
+// HasTerminationHooks checks if the annotation [v1alpha1.AnnotationWaitingForTerminationHooks] is set.
+func HasTerminationHooks(machine *v1alpha1.Machine) (exists bool) {
+	if machine == nil {
+		return false
+	}
+	_, exists = machine.Annotations[v1alpha1.AnnotationWaitingForTerminationHooks]
+	return
+}

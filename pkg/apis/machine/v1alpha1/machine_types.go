@@ -145,6 +145,9 @@ const (
 	// MachineRunning means node is ready and running successfully
 	MachineRunning MachinePhase = "Running"
 
+	// MachineWaitingForTerminationHook means drain is successful and is waiting for the termination hook to be removed
+	MachineWaitingForTerminationHook = "WaitingForTerminationHook"
+
 	// MachineTerminating means node is terminating
 	MachineTerminating MachinePhase = "Terminating"
 
